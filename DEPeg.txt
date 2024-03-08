@@ -1,0 +1,453 @@
+import java.io.*;
+import java.nio.file.*;
+import java.util.*;
+public class DEP {
+    ArrayList<Department> depts ;
+    ArrayList<Employee> emps ;
+    ArrayList<WorksOn> works ;
+    ArrayList<Project> projs;
+   public static void main(String[]args){
+     DEP dep = new DEP();
+    dep.process();
+   }
+    public DEP(){
+        depts = new ArrayList<>();
+        emps = new ArrayList<>();
+        works = new ArrayList<>();
+        projs = new ArrayList<>();
+        
+   }
+   public void process(){
+        loadDepartments();
+        loadEmployee();
+        loadProjects();
+        loadWorksOn();
+        Scanner input=new Scanner(System.in);	
+		while(true) {
+            displayMenu();
+			int choice = input.nextInt();
+			int ProjectNumber;
+            int enumber;
+			switch(choice) {
+				case 1:	//Display Departments' information
+					displayDepartments();
+                    System.out.println(" ");
+					break;
+				case 2:	//Display Employees' information
+					displayEmployees();
+                    System.out.println(" ");
+					break;	
+				case 3: //Display Projects's information
+					displayProjects();
+                    System.out.println(" ");
+					break;
+					
+				case 4: //Display employees works on project
+					displayWorksOn();
+                    System.out.println(" ");
+					break;
+                case 5:
+                    addDepartment();
+                    System.out.println(" ");
+                    break;
+                case 6:
+                    addEmployee();
+                    System.out.println(" ");
+                    break;
+                case 7:
+                    addProject();
+                    System.out.println(" ");
+                    break;
+				case 8: //Add a record for an employee who works on a project 
+					System.out.print("Input an employee number: ");
+					enumber = input.nextInt();
+					if(employeeExist(enumber)) {
+                        		System.out.print("Input a project number: ");
+                        		ProjectNumber=input.nextInt();
+                        		
+						if(projectExist(ProjectNumber)){
+                            			if(employeeHaveBeenAllocated(enumber, ProjectNumber)){
+                            				System.out.println("The employee "+ enumber+" have been allocated to the project "+ProjectNumber);
+                            				System.out.println(" ");
+                           				break;       
+                            			}	
+                            			else{
+                                			System.out.print("Enter the working hours: ");
+                          		     	 	int hours =input.nextInt();
+                                			works.add(new WorksOn(addWorkOnProject(ProjectNumber), addEmployeeProject(enumber), hours));
+                                			System.out.println(" ");
+                                			break;
+                            			}
+                        		}
+                       			else{
+                           			System.out.println("The project " + ProjectNumber + " does not exist.");
+                            			System.out.println(" ");
+                           			break;
+                      		      }
+                 		      }
+                  		else{
+                        		System.out.println("The employee " + enumber + " does not exist.");
+                        		System.out.println(" ");
+                       			break;
+                              }
+                case 9:
+                    saveDepartments();
+                    saveEmployee();
+                    saveProjects();
+                    saveWorksOn();
+                    break;
+                case 0:
+                    System.out.println("Bye-Bye");
+					break;
+                default:
+                System.out.println("please choose 0>9");
+                System.out.println();
+
+                }
+                if(choice==0){
+                    break;
+                }
+            }
+            
+    }
+    
+    public void loadDepartments(){
+        Path path = Paths.get("departments.txt");
+        try{
+            if(Files.exists(path)){
+                Scanner scanner = new Scanner(path);
+                scanner.useDelimiter(", |\r\n|\n") ;
+                while(scanner.hasNext()){
+                    Department department = new Department();
+                    
+                    department.dataInput(scanner);
+                    depts.add(department);
+                    
+                }
+                scanner.close();   
+            }
+        }
+        catch(IOException err) {
+			System.out.println("IO exception error");
+		}
+
+    }
+    public void loadProjects(){
+        Path path = Paths.get("projects.txt");
+        try{
+            if(Files.exists(path)){
+                Scanner scanner = new Scanner(path);
+                scanner.useDelimiter(", |\r\n|\n");
+                while(scanner.hasNext()){
+                    Project project= new Project();
+                    project.dataInput(scanner);
+                    projs.add(project);
+                }
+                if(scanner!=null){scanner.close();}
+            }
+        }
+        catch(IOException err) {
+			System.out.println("IO exception error");
+		}
+    }
+    public void loadEmployee(){
+        Path path =Paths.get("employees.txt");
+        try{
+            if(Files.exists(path)){
+                Scanner scanner = new Scanner(path);
+                scanner.useDelimiter(", |\r\n|\n");
+                while(scanner.hasNext()){
+                    String type = scanner.next();
+                    if(type.equals("A")){
+                        Admin admin = new Admin();
+                        admin.dataInput(scanner);
+                        emps.add(admin);
+                    }
+                    else if(type.equals("D")){
+                        Developer developer = new Developer();
+                        developer.dataInput(scanner);
+                        emps.add(developer);
+                    }
+                    
+                }
+                scanner.close();
+            }
+        }
+        catch(IOException err) {
+			System.out.println("IO exception error");
+        }
+       
+    }
+    public void loadWorksOn(){
+        Path path = Paths.get("workson.txt");
+        try{
+            if(Files.exists(path)){
+                Scanner scanner = new Scanner(path);
+                scanner.useDelimiter(", |\r\n|\n");
+                while(scanner.hasNext()){
+                    WorksOn worksOn = new WorksOn();
+                    worksOn.dataInput(scanner);
+                    works.add(worksOn);
+                }
+                scanner.close();
+            }
+        }
+        catch(IOException err) {
+            System.out.println("IO exception error");
+        }
+    }
+    public void addDepartment(){
+        Scanner sc = new Scanner(System.in);
+        Scanner sc1 = new Scanner(System.in);
+        System.out.print("Department number: ");
+        int choice =sc.nextInt();
+        for (int i=0;i<depts.size();i++){
+            if(depts.get(i).getDepartmentNumber()==choice){
+                System.out.println("The department "+ choice+" already exists.");
+                break;
+            }
+            else if (i==depts.size()-1){
+               
+                System.out.print("Department name: ");
+                String dName=sc1.nextLine();
+                System.out.print("Manager number: ");
+                int mNumber=sc.nextInt();
+                System.out.print("Budget: ");
+                double budget=sc.nextDouble();
+                System.out.print("Start date: ");
+                String date =sc.next();
+                depts.add(new Department(choice, dName, mNumber, budget, date));
+                break;
+            }
+        }
+       
+    }
+    public void addProject(){
+        Scanner sc = new Scanner(System.in);
+        System.out.print("Project number: ");
+        int choice =sc.nextInt();
+        for (int i=0;i<projs.size();i++){
+            if(projs.get(i).getNumber()==choice){
+                System.out.println("The project"+ choice+" already exists.");
+                break;
+            }
+            else if (i==depts.size()-1){
+                System.out.print("Project title: ");
+                String title=sc.next();
+                System.out.print("Sponsor: ");
+                String sponsor=sc.next();
+                System.out.print("Department number: ");
+                int dNumber=sc.nextInt();
+                System.out.print("Budget: ");
+                double budget =sc.nextDouble();
+                projs.add(new Project(choice,title,sponsor,dNumber,budget));  
+                
+                break;
+            }
+        }
+        
+    }
+    public void addEmployee(){
+        Scanner sc1 = new Scanner(System.in);
+        Scanner sc = new Scanner(System.in);
+        System.out.print("Employee number: ");
+        int choice =sc.nextInt();
+        for (int i=0;i<emps.size();i++){
+            if(emps.get(i).getNumber()==choice){
+                System.out.println("The employee "+ choice+" already exists.");
+                break;
+            }
+            else if (i==emps.size()-1){
+               
+                System.out.print("Employee name: ");
+                String name=sc1.nextLine();
+                System.out.print("Data of birth (dd/mm/yyyy): ");
+                String dob=sc.next();
+                System.out.print("Address: ");
+                String address=sc1.nextLine();
+                System.out.print("gender: ");
+                String gender =sc.next();
+                System.out.print("Salary: ");
+                double salary =sc.nextDouble();
+                System.out.print("Supervisor number: ");
+                int sNumber=sc.nextInt();
+                System.out.print("Department number:");
+                int dNumber=sc.nextInt();
+                System.out.print("Admin or Developer (A or D): ");
+                String type =sc.next();
+                if (type.equals("D")){
+                    System.out.print("Languages: ");
+                    String language = sc1.nextLine();
+                    emps.add(new Developer(choice,name,dob,address,gender,salary,sNumber,dNumber,language));
+                }
+                else if(type.equals("A")){
+                    System.out.print("Skills: ");
+                    String skills = sc1.nextLine();
+                    emps.add(new Admin(choice,name,dob,address,gender,salary,sNumber,dNumber,skills));
+                }
+                
+            }
+        }
+    }
+   
+
+    
+    public void displayMenu(){
+        System.out.println("1. Display all departments. ");
+        System.out.println("2. Display all employees. ");
+        System.out.println("3. Display all projects. ");
+        System.out.println("4. Display information for employees who works on projects. ");
+        System.out.println("5. Add a new department.  ");
+        System.out.println("6. Add a new employee");
+        System.out.println("7. Add a new project");
+        System.out.println("8. Add a new works on record");
+        System.out.println("9. Save data from containers to text files");
+        System.out.println("0. Exit.");
+        System.out.printf("Input a choice (0-9): ");
+    }
+    public void displayDepartments() {
+        for (Department dept : depts) {
+            System.out.println(dept.toString());
+        }
+    }
+
+    public void displayEmployees() {
+        for (Employee emp : emps) {
+            if(emp instanceof Developer){
+                System.out.println("Developer "+emp.toString());
+            }
+            else if(emp instanceof Admin){
+                System.out.println("Admin "+emp.toString());
+            }
+        }
+    }
+
+    public void displayProjects() {
+        for (Project proj : projs) {
+            System.out.println(proj.toString());
+        }
+    }
+
+    public void displayWorksOn() {
+        for (WorksOn work : works) {
+            System.out.println(work.toString());
+        }
+    }
+    //check if Employee number is valid
+    public boolean employeeExist(int enumber){
+        boolean right= true;
+        for(Employee employe: emps){
+            if( employe.getNumber()==enumber){
+                right= true;
+                break;
+                
+            }
+            else{
+                right=false;
+                
+            }
+        }
+        return right;
+        
+    }
+    //check if project number is valid
+    public boolean projectExist(int projectNumber){
+        boolean right= true;
+        for(Project project : projs){
+            if( project.getNumber()==projectNumber){
+                right= true;
+                break;
+                
+            }
+            else{
+                right=false;
+                
+            }
+        }
+        return right;
+    }
+    //check whether the employee have been allocated
+    public boolean employeeHaveBeenAllocated(int enumber,long projectNumber){
+        boolean right= false;
+        for(int i =0;i<works.size();i++){
+            if((works.get(i).getEmployee().getNumber()==enumber)  && (works.get(i).getProject().getNumber()==projectNumber)){
+                right= true;
+                break;
+            }
+           
+        }
+        return right;
+
+    }
+     //return Project object through employee number
+    public Project addWorkOnProject(long projectNumber){
+        Project project1=projs.get(0);
+        for(Project project:projs){
+            if(projectNumber==project.getNumber()){
+                 project1= project;
+                 break;
+            }
+        }
+        return project1;
+    }
+    //return Developer object through employee number
+    public Developer addEmployeeProject(int enumber){
+        Developer t1=null;
+            for(Employee emps1:emps){
+                if((emps1 instanceof Developer) && (enumber==emps1.getNumber())){
+                    t1=(Developer) emps1;
+                    break;
+                    
+                }
+        }
+        return t1;
+    }
+    public void saveDepartments(){
+        try {
+            Formatter formatter = new Formatter("department.txt");
+            for(Department departments: depts){
+                departments.dataOutput(formatter);
+            }
+            formatter.close();
+        } catch (FileNotFoundException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+    }
+    public void saveWorksOn(){
+        try {
+            Formatter formatter = new Formatter("workson.txt");
+            for(WorksOn worksOn: works){
+                worksOn.dataOutput(formatter);
+            } 
+            formatter.close();
+        } catch (FileNotFoundException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        
+    }
+    public void saveEmployee(){
+        try{
+            Formatter formatter = new Formatter("employee.txt");
+            for(Employee employee: emps){
+                employee.dataOutput(formatter);
+            }
+            formatter.close();
+        }
+        catch(FileNotFoundException e){
+            e.printStackTrace();
+        }
+    }
+    public void saveProjects(){
+        try{
+            Formatter formatter = new Formatter("project.txt");
+            for(Project projects: projs){
+                projects.dataOutput(formatter);
+            }
+        }
+        catch(FileNotFoundException e){
+            e.printStackTrace();
+        }
+    }
+}
